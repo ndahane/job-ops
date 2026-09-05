@@ -107,10 +107,13 @@ export function useDesignResumeStudio() {
   const pdfRenderer = settings?.pdfRenderer?.value ?? "rxresume";
   const typstTheme = settings?.typstTheme?.value ?? "classic";
   const canDownloadPdf = status?.exists && !pdfDownloading;
-  const pictureEnabled = Boolean(tracerReadiness?.isPubliclyAvailable);
-  const pictureDisabledReason =
-    tracerReadiness?.reason ??
-    "Pictures require JobOps to be reachable at a public URL.";
+  // Pictures are materialized from disk for local renderers (Typst/LaTeX), so
+  // uploading works even without a public URL. The notice only tells the user
+  // that RxResume-rendered PDFs hide the picture until a public URL exists.
+  const pictureEnabled = true;
+  const pictureDisabledReason = tracerReadiness?.isPubliclyAvailable
+    ? null
+    : "Your photo is included in locally rendered PDFs (Typst/LaTeX). It stays hidden in RxResume-rendered PDFs until JobOps is reachable at a public URL.";
   const activeSection = sectionParam ?? null;
   const activeSectionIsValid =
     activeSection == null ||
@@ -472,14 +475,6 @@ export function useDesignResumeStudio() {
   };
 
   const handleUploadPicture = async (file: File) => {
-    if (!pictureEnabled) {
-      toast.error(pictureDisabledReason);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      return;
-    }
-
     try {
       setPictureUploading(true);
       const latestDraft = await ensureLatestPersistedDraft();

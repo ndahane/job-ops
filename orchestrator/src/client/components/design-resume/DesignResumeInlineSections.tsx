@@ -88,13 +88,12 @@ type PictureSectionProps = {
 export function PictureSection({
   picture,
   pictureUploading,
-  pictureEnabled,
   pictureDisabledReason,
   onUploadPicture,
   onDeletePicture,
   onUpdatePicture,
 }: PictureSectionProps) {
-  const editDisabled = !pictureEnabled;
+  const editDisabled = false;
   const pictureUrl = toText(picture.url);
   const [previewUrl, setPreviewUrl] = useState(pictureUrl);
 
@@ -133,12 +132,9 @@ export function PictureSection({
 
   return (
     <div className="grid gap-3">
-      {!pictureEnabled ? (
+      {pictureDisabledReason ? (
         <Alert>
-          <AlertDescription>
-            {pictureDisabledReason ??
-              "Pictures require JobOps to be reachable at a public URL."}
-          </AlertDescription>
+          <AlertDescription>{pictureDisabledReason}</AlertDescription>
         </Alert>
       ) : null}
 

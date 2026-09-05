@@ -82,7 +82,9 @@ Behavior and limits:
 - AI field editing fails:
   Check the LLM provider and tailoring model settings in **Settings**. The assistant uses the same model configuration as resume tailoring.
 - Picture upload fails:
-  Use `png`, `jpeg`, or `webp` images.
+  Use `png`, `jpeg`, or `webp` images. Uploading works on localhost too; the
+  photo is included in locally rendered PDFs (Typst/LaTeX), and hidden in
+  RxResume-rendered PDFs until JobOps is reachable at a public URL.
 - Custom Typst template fails to compile:
   The preview shows the Typst compiler error. Fix the reported line in your source, then save the template again. Also make sure `typst` is installed (or `TYPST_BIN` is set) when you are not using Docker.
 - You changed the upstream resume and want that copied over:
