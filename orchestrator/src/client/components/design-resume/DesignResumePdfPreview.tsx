@@ -9,6 +9,7 @@ import {
   GlobalWorkerOptions,
   getDocument,
   type PDFDocumentProxy,
+  type RenderTask,
 } from "pdfjs-dist";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trackProductEvent } from "@/lib/analytics";
@@ -93,6 +94,7 @@ export function DesignResumePdfPreview({
   const lastLoadedKey = useRef<string | null>(null);
   const viewerRef = useRef<HTMLDivElement | null>(null);
   const canvasRefs = useRef(new Map<number, HTMLCanvasElement>());
+  const activeRenderTasksRef = useRef(new Map<number, RenderTask>());
   const pendingScrollRestoreRef = useRef<PreviewScrollSnapshot | null>(null);
   const latestPdfDocumentRef = useRef<PDFDocumentProxy | null>(null);
 
@@ -242,6 +244,10 @@ export function DesignResumePdfPreview({
 
   useEffect(() => {
     return () => {
+      for (const task of activeRenderTasksRef.current.values()) {
+        task.cancel();
+      }
+      activeRenderTasksRef.current.clear();
       void latestPdfDocumentRef.current?.destroy();
     };
   }, []);
@@ -264,6 +270,20 @@ export function DesignResumePdfPreview({
         const page = await pdfDocument.getPage(pageNumber);
         if (cancelled) return;
 
+        // pdf.js refuses a second render() on a canvas while one is running:
+        // cancel and await the previous task for this page before reusing it.
+        const previousTask = activeRenderTasksRef.current.get(pageNumber);
+        if (previousTask) {
+          previousTask.cancel();
+          try {
+            await previousTask.promise;
+          } catch {
+            // cancellation rejection is expected
+          }
+          activeRenderTasksRef.current.delete(pageNumber);
+          if (cancelled) return;
+        }
+
         const baseViewport = page.getViewport({ scale: 1 });
         const scale = renderWidth / baseViewport.width;
         const viewport = page.getViewport({ scale });
@@ -281,7 +301,14 @@ export function DesignResumePdfPreview({
           canvasContext: context,
           viewport,
         });
-        await renderTask.promise;
+        activeRenderTasksRef.current.set(pageNumber, renderTask);
+        try {
+          await renderTask.promise;
+        } finally {
+          if (activeRenderTasksRef.current.get(pageNumber) === renderTask) {
+            activeRenderTasksRef.current.delete(pageNumber);
+          }
+        }
       }
 
       if (cancelled) return;
@@ -303,6 +330,10 @@ export function DesignResumePdfPreview({
 
     return () => {
       cancelled = true;
+      for (const task of activeRenderTasksRef.current.values()) {
+        task.cancel();
+      }
+      activeRenderTasksRef.current.clear();
     };
   }, [pageCount, pdfDocument, renderWidth]);
 
