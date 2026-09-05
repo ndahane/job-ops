@@ -6,7 +6,7 @@ import { join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { logger } from "@infra/logger";
 import { sanitizeUnknown } from "@infra/sanitize";
-import { TYPST_THEME_VALUES, type TypstTheme } from "@shared/types";
+import { TYPST_THEME_VALUES_WITH_CUSTOM, type TypstTheme } from "@shared/types";
 import { getLatexResumeSectionTitles } from "./document";
 import { materializeResumePicture } from "./picture";
 import type {
@@ -84,7 +84,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function assertSupportedTheme(theme: TypstTheme): void {
-  if (!TYPST_THEME_VALUES.includes(theme)) {
+  if (!TYPST_THEME_VALUES_WITH_CUSTOM.includes(theme)) {
     throw new Error(`Unsupported Typst theme: ${theme}`);
   }
 }
@@ -702,14 +702,19 @@ export function convertDocFieldsToTypst(
 }
 
 export const typstResumeRenderer: ResumeRenderer = {
-  async render({ document, outputPath, jobId, typstTheme = "classic" }) {
+  async render({
+    document,
+    outputPath,
+    jobId,
+    typstTheme = "classic",
+    customTypstSource,
+  }) {
     const tempDir = await mkdtemp(join(tmpdir(), "job-ops-resume-render-"));
     const typPath = join(tempDir, "resume.typ");
     const resumeDataPath = join(tempDir, RESUME_DATA_FILENAME);
     const compiledPdfPath = join(tempDir, OUTPUT_FILENAME);
 
     try {
-      const { manifest, template, tokens } = await loadTemplate(typstTheme);
       const renderableDocument = await materializeResumePicture(
         document,
         tempDir,
@@ -717,17 +722,32 @@ export const typstResumeRenderer: ResumeRenderer = {
       let typst: string;
       let resumeDataDoc: LatexResumeDocument;
 
-      if (manifest.kind === "native") {
-        if (!tokens) {
+      if (typstTheme === "custom") {
+        const source = customTypstSource?.trim() ?? "";
+        if (!source) {
           throw new Error(
-            `Typst theme ${typstTheme} is missing native tokens.`,
+            "The Custom Typst theme is selected but no custom Typst template is available. Import a Typst template in Resume Studio first.",
           );
         }
-        typst = buildTypstDocument(renderableDocument, template, tokens);
-        resumeDataDoc = renderableDocument;
-      } else {
-        typst = buildAdaptedTypstDocument(template);
+        // The user's template is compiled as-is. The studio document is still
+        // written next to it (Typst-escaped, like adapted themes) so custom
+        // templates may optionally read it via json("resume-data.json").
+        typst = source;
         resumeDataDoc = convertDocFieldsToTypst(renderableDocument);
+      } else {
+        const { manifest, template, tokens } = await loadTemplate(typstTheme);
+        if (manifest.kind === "native") {
+          if (!tokens) {
+            throw new Error(
+              `Typst theme ${typstTheme} is missing native tokens.`,
+            );
+          }
+          typst = buildTypstDocument(renderableDocument, template, tokens);
+          resumeDataDoc = renderableDocument;
+        } else {
+          typst = buildAdaptedTypstDocument(template);
+          resumeDataDoc = convertDocFieldsToTypst(renderableDocument);
+        }
       }
 
       await writeFile(resumeDataPath, JSON.stringify(resumeDataDoc), "utf8");
@@ -788,6 +808,7 @@ export async function renderTypstPdf(args: {
   outputPath: string;
   jobId: string;
   typstTheme?: TypstTheme;
+  customTypstSource?: string | null;
 }): Promise<void> {
   await typstResumeRenderer.render(args);
 }

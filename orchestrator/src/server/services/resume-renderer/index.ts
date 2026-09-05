@@ -26,6 +26,7 @@ export async function renderResumePdf(args: {
   language?: NormalizeResumeJsonOptions["language"];
   renderer?: LocalPdfRenderer;
   typstTheme?: TypstTheme;
+  customTypstSource?: string | null;
 }): Promise<void> {
   const document = buildResumeRenderDocument(args.resumeJson, {
     language: args.language,
@@ -36,6 +37,7 @@ export async function renderResumePdf(args: {
       outputPath: args.outputPath,
       jobId: args.jobId,
       typstTheme: args.typstTheme,
+      customTypstSource: args.customTypstSource,
     });
     return;
   }

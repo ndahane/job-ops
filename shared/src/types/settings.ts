@@ -69,7 +69,13 @@ export const PDF_RENDERER_LABELS: Record<PdfRenderer, string> = {
   typst: "Local Typst",
 };
 
-export type TypstTheme = (typeof TYPST_THEME_VALUES)[number];
+export const CUSTOM_TYPST_THEME_VALUE = "custom" as const;
+export const TYPST_THEME_VALUES_WITH_CUSTOM = [
+  ...TYPST_THEME_VALUES,
+  CUSTOM_TYPST_THEME_VALUE,
+] as const;
+export type TypstTheme = (typeof TYPST_THEME_VALUES_WITH_CUSTOM)[number];
+export const TYPST_THEME_CUSTOM_LABEL = "Custom (imported template)";
 
 export const CHAT_STYLE_LANGUAGE_MODE_VALUES = [
   "manual",

@@ -53,6 +53,24 @@ Current v1 scope:
 - export of the stored RR v5 document
 - PDF preview and PDF download using the selected renderer
 
+### Custom Typst templates
+
+If you already maintain your CV as a Typst source file, Resume Studio can render your PDF from that source as-is:
+
+1. In **Resume Studio**, set the template renderer to **Local Typst**.
+2. Click **Manage template** next to the Typst theme selector.
+3. Choose a `.typ` file or paste your Typst source, then **Save template**.
+
+Saving a template stores it locally (one template per workspace, up to 1 MB), switches the Typst theme to **Custom (imported template)**, and re-renders the preview. Removing the template switches the theme back to **Classic**.
+
+Behavior and limits:
+
+- The PDF is compiled from your source exactly as written, so your original layout is preserved.
+- Studio edits and per-job tailoring do **not** change this render; use the built-in themes if you want data-driven rendering.
+- The normalized studio document is still written next to your template as `resume-data.json` (Typst-escaped), so an advanced template may read it with `json("resume-data.json")`.
+- Custom templates are a self-hosted feature and are disabled in hosted mode.
+- Compiling requires the Typst binary (bundled in Docker; otherwise install `typst` or set `TYPST_BIN`).
+
 ## Common problems
 
 - Import button fails:
@@ -65,6 +83,8 @@ Current v1 scope:
   Check the LLM provider and tailoring model settings in **Settings**. The assistant uses the same model configuration as resume tailoring.
 - Picture upload fails:
   Use `png`, `jpeg`, or `webp` images.
+- Custom Typst template fails to compile:
+  The preview shows the Typst compiler error. Fix the reported line in your source, then save the template again. Also make sure `typst` is installed (or `TYPST_BIN` is set) when you are not using Docker.
 - You changed the upstream resume and want that copied over:
   Use **Re-import** to replace the local document with the current Reactive Resume base resume.
 

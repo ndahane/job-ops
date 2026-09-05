@@ -17,6 +17,7 @@ type DesignResumePdfPreviewProps = {
   draft: DesignResumeDocument;
   pdfRenderer: PdfRenderer;
   typstTheme: TypstTheme;
+  typstTemplateUpdatedAt: string | null;
   isUpdatingRenderer: boolean;
   isDirty: boolean;
   saveState: "idle" | "saving" | "saved" | "error";
@@ -76,6 +77,7 @@ export function DesignResumePdfPreview({
   draft,
   pdfRenderer,
   typstTheme,
+  typstTemplateUpdatedAt,
   isUpdatingRenderer,
   isDirty,
   saveState,
@@ -94,9 +96,14 @@ export function DesignResumePdfPreview({
   const pendingScrollRestoreRef = useRef<PreviewScrollSnapshot | null>(null);
   const latestPdfDocumentRef = useRef<PDFDocumentProxy | null>(null);
 
+  // Re-render when the custom Typst template is replaced; the template is the
+  // compile input for the "custom" theme, so its updatedAt acts like a theme change.
+  const templateKey =
+    typstTheme === "custom" ? (typstTemplateUpdatedAt ?? "") : "";
   const revisionKey = useMemo(
-    () => `${draft.id}:${draft.revision}:${pdfRenderer}:${typstTheme}`,
-    [draft.id, draft.revision, pdfRenderer, typstTheme],
+    () =>
+      `${draft.id}:${draft.revision}:${pdfRenderer}:${typstTheme}:${templateKey}`,
+    [draft.id, draft.revision, pdfRenderer, typstTheme, templateKey],
   );
   const renderWidth = Math.max(0, Math.floor(fitWidth * zoomLevel));
   const zoomPercentLabel = `${Math.round(zoomLevel * 100)}%`;

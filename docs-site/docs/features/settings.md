@@ -173,6 +173,7 @@ Defaults and constraints:
 - When Typst is selected, choose a Typst theme:
   - Classic
   - Compact
+  - Custom (a Typst template imported from Resume Studio)
 - JobOps uses the selected RxResume resume as the source of truth for import and project data
 - Invalid Reactive Resume credentials or other `4xx` config failures block the save and stay visible as an inline error
 - Temporary Reactive Resume downtime shows an inline warning, but the save still succeeds

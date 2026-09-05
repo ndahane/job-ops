@@ -120,6 +120,7 @@ export interface RenderResumePdfArgs {
   outputPath: string;
   jobId: string;
   typstTheme?: TypstTheme;
+  customTypstSource?: string | null;
 }
 
 export interface ResumeRenderer {

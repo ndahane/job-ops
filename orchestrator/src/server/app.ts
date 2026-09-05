@@ -414,6 +414,9 @@ export function createApp() {
   // Resume file import sends base64 JSON payloads, which expand beyond the raw
   // file size. Scope the larger JSON limit to that endpoint only.
   app.use("/api/design-resume/import/file", express.json({ limit: "15mb" }));
+  // Custom Typst templates are plain-text sources up to 1 MB, which exceeds
+  // the default JSON body limit. Scope the larger limit to that endpoint only.
+  app.use("/api/design-resume/typst-template", express.json({ limit: "2mb" }));
   // Ghostwriter chat can include up to three base64 screenshot attachments, so
   // keep a larger JSON limit scoped to this endpoint to allow the maximum
   // validated payload through to route-level validation.

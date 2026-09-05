@@ -505,4 +505,70 @@ describe("typst resume renderer", () => {
       expect(stats.status).toBe(0);
     },
   );
+
+  it("rejects the custom theme when no template source is provided", async () => {
+    const tempDir = await createTempDir();
+    tempDirs.push(tempDir);
+    const outputPath = join(tempDir, "resume.pdf");
+
+    await expect(
+      renderTypstPdf({
+        document: baseDocument,
+        outputPath,
+        jobId: "job-custom-missing-source",
+        typstTheme: "custom",
+      }),
+    ).rejects.toThrow(/no custom typst template/i);
+  });
+
+  it("sends the custom template to the compiler instead of a theme manifest", async () => {
+    const previous = process.env.TYPST_BIN;
+    process.env.TYPST_BIN = "/definitely/missing/typst";
+    const tempDir = await createTempDir();
+    tempDirs.push(tempDir);
+    const outputPath = join(tempDir, "resume.pdf");
+
+    try {
+      // Reaching the binary-not-found error proves the custom source path got
+      // all the way to runTypst; a theme lookup failure would say otherwise.
+      await expect(
+        renderTypstPdf({
+          document: baseDocument,
+          outputPath,
+          jobId: "job-custom-missing-binary",
+          typstTheme: "custom",
+          customTypstSource: "= Jane Doe\n\nCustom CV body.",
+        }),
+      ).rejects.toThrow(/Typst binary not found/i);
+    } finally {
+      if (previous === undefined) {
+        delete process.env.TYPST_BIN;
+      } else {
+        process.env.TYPST_BIN = previous;
+      }
+    }
+  });
+
+  it.skipIf(!typstAvailable())(
+    "renders a PDF from the custom template source when typst is installed",
+    async () => {
+      const tempDir = await createTempDir();
+      tempDirs.push(tempDir);
+      const outputPath = join(tempDir, "custom-template.pdf");
+
+      await renderTypstPdf({
+        document: baseDocument,
+        outputPath,
+        jobId: "job-render-custom-template",
+        typstTheme: "custom",
+        customTypstSource:
+          "= Jane Doe\n\n= Experience\n\n- Built platforms with Typst.",
+      });
+
+      const stats = spawnSync("sh", ["-lc", `test -s "${outputPath}"`], {
+        stdio: "ignore",
+      });
+      expect(stats.status).toBe(0);
+    },
+  );
 });

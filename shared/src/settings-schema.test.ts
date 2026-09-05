@@ -61,6 +61,14 @@ describe("updateSettingsSchema", () => {
 
     expect(
       updateSettingsSchema.parse({
+        typstTheme: "custom",
+      }),
+    ).toEqual({
+      typstTheme: "custom",
+    });
+
+    expect(
+      updateSettingsSchema.parse({
         typstTheme: null,
       }),
     ).toEqual({

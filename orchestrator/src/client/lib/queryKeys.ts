@@ -9,6 +9,8 @@ export const queryKeys = {
     all: ["design-resume"] as const,
     current: () => [...queryKeys.designResume.all, "current"] as const,
     status: () => [...queryKeys.designResume.all, "status"] as const,
+    typstTemplate: () =>
+      [...queryKeys.designResume.all, "typst-template"] as const,
   },
   settings: {
     all: ["settings"] as const,

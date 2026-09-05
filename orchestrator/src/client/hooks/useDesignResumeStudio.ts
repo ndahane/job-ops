@@ -24,17 +24,22 @@ import { useTracerReadiness } from "@client/hooks/useTracerReadiness";
 import type {
   DesignResumeDocument,
   DesignResumeJson,
+  DesignResumeTypstTemplate,
   PdfRenderer,
   TypstTheme,
 } from "@shared/types";
-import { PDF_RENDERER_LABELS, TYPST_THEME_LABELS } from "@shared/types";
-import { useQueryClient } from "@tanstack/react-query";
+import {
+  PDF_RENDERER_LABELS,
+  TYPST_THEME_CUSTOM_LABEL,
+  TYPST_THEME_LABELS,
+} from "@shared/types";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { showErrorToast } from "@/client/lib/error-toast";
 import { downloadDesignResumePdf } from "@/client/lib/private-pdf";
-import { trackProductEvent } from "@/lib/analytics";
+import { bucketCount, trackProductEvent } from "@/lib/analytics";
 import { queryKeys } from "../lib/queryKeys";
 
 /**
@@ -58,6 +63,12 @@ export function useDesignResumeStudio() {
   const { document, status, isLoading, error } = useDesignResume();
   const { settings, isLoading: settingsLoading } = useSettings();
   const { readiness: tracerReadiness } = useTracerReadiness();
+  const typstTemplateQuery = useQuery({
+    queryKey: queryKeys.designResume.typstTemplate(),
+    queryFn: () => api.getDesignResumeTypstTemplate(),
+  });
+  const typstTemplate: DesignResumeTypstTemplate | null =
+    typstTemplateQuery.data?.template ?? null;
   const [draft, setDraft] = useState<DesignResumeDocument | null>(null);
   const [saveState, setSaveState] = useState<
     "idle" | "saving" | "saved" | "error"
@@ -75,6 +86,9 @@ export function useDesignResumeStudio() {
     useState<DesignResumeMobileView>(() => (sectionParam ? "edit" : "preview"));
   const [pdfDownloading, setPdfDownloading] = useState(false);
   const [rendererUpdating, setRendererUpdating] = useState(false);
+  const [typstTemplateDialogOpen, setTypstTemplateDialogOpen] = useState(false);
+  const [typstTemplateSaving, setTypstTemplateSaving] = useState(false);
+  const [typstTemplateDeleting, setTypstTemplateDeleting] = useState(false);
   const [dirty, setDirty] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importFileInputRef = useRef<HTMLInputElement>(null);
@@ -554,18 +568,97 @@ export function useDesignResumeStudio() {
   const handleTypstThemeChange = async (nextTheme: TypstTheme) => {
     if (settingsLoading || nextTheme === typstTheme) return;
 
+    if (nextTheme === "custom" && !typstTemplate) {
+      // Nothing imported yet: open the import dialog instead. The Custom
+      // theme becomes active automatically once a template is saved.
+      setTypstTemplateDialogOpen(true);
+      return;
+    }
+
     try {
       setRendererUpdating(true);
       const updatedSettings = await api.updateSettings({
         typstTheme: nextTheme,
       });
       queryClient.setQueryData(queryKeys.settings.current(), updatedSettings);
-      toast.success(`${TYPST_THEME_LABELS[nextTheme]} Typst theme is active.`);
+      const themeLabel =
+        nextTheme === "custom"
+          ? TYPST_THEME_CUSTOM_LABEL
+          : TYPST_THEME_LABELS[nextTheme];
+      toast.success(`${themeLabel} Typst theme is active.`);
       notifyReadyPdfRefresh();
     } catch (updateError) {
       showErrorToast(updateError, "Failed to update the Typst theme.");
     } finally {
       setRendererUpdating(false);
+    }
+  };
+
+  const handleSaveTypstTemplate = async (input: {
+    fileName?: string;
+    source: string;
+  }): Promise<boolean> => {
+    try {
+      setTypstTemplateSaving(true);
+      const { template: saved } =
+        await api.saveDesignResumeTypstTemplate(input);
+      if (!saved) {
+        throw new Error("Saved Typst template could not be loaded.");
+      }
+      queryClient.setQueryData(queryKeys.designResume.typstTemplate(), {
+        template: saved,
+      });
+      trackProductEvent("resume_studio_typst_template_saved", {
+        byte_size_bucket: bucketCount(saved.byteSize),
+      });
+      if (pdfRenderer !== "typst" || typstTheme !== "custom") {
+        const updatedSettings = await api.updateSettings({
+          pdfRenderer: "typst",
+          typstTheme: "custom",
+        });
+        queryClient.setQueryData(queryKeys.settings.current(), updatedSettings);
+        toast.success(
+          "Custom Typst template saved. It is now the active PDF renderer.",
+        );
+      } else {
+        toast.success("Custom Typst template saved.");
+      }
+      notifyReadyPdfRefresh();
+      return true;
+    } catch (saveError) {
+      showErrorToast(saveError, "Failed to save the Typst template.");
+      return false;
+    } finally {
+      setTypstTemplateSaving(false);
+    }
+  };
+
+  const handleDeleteTypstTemplate = async () => {
+    try {
+      setTypstTemplateDeleting(true);
+      await api.deleteDesignResumeTypstTemplate();
+      queryClient.setQueryData(queryKeys.designResume.typstTemplate(), {
+        template: null,
+      });
+      trackProductEvent("resume_studio_typst_template_deleted", {
+        was_active_theme: typstTheme === "custom",
+      });
+      if (typstTheme === "custom") {
+        const updatedSettings = await api.updateSettings({
+          typstTheme: "classic",
+        });
+        queryClient.setQueryData(queryKeys.settings.current(), updatedSettings);
+        toast.info(
+          "Custom template removed. Switched back to the Classic Typst theme.",
+        );
+      } else {
+        toast.success("Custom Typst template removed.");
+      }
+      notifyReadyPdfRefresh();
+    } catch (deleteError) {
+      showErrorToast(deleteError, "Failed to remove the Typst template.");
+    } finally {
+      setTypstTemplateDeleting(false);
     }
   };
 
@@ -647,6 +740,11 @@ export function useDesignResumeStudio() {
     activeDialogItem,
     pdfRenderer,
     typstTheme,
+    typstTemplate,
+    typstTemplateUpdatedAt: typstTemplate?.updatedAt ?? null,
+    typstTemplateDialogOpen,
+    typstTemplateSaving,
+    typstTemplateDeleting,
     canDownloadPdf,
     pictureEnabled,
     pictureDisabledReason,
@@ -669,6 +767,9 @@ export function useDesignResumeStudio() {
     handleDeletePicture,
     handlePdfRendererChange,
     handleTypstThemeChange,
+    handleSaveTypstTemplate,
+    handleDeleteTypstTemplate,
+    setTypstTemplateDialogOpen,
     handleMobileSectionSelect,
     getDesignResumeSectionBadge,
   };

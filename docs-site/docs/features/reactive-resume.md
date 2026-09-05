@@ -220,6 +220,10 @@ The generated shared metadata powers the settings dropdowns, so theme PRs do not
 
 For package-backed themes, set `kind` to `adapted` and read the normalized resume document with `json(__RESUME_DATA_PATH__)` from the Typst entrypoint.
 
+### Custom Typst template (theme `custom`)
+
+Besides the bundled themes, Resume Studio can store your own `.typ` source and compile it as-is. Import it with **Manage template** next to the Typst theme selector; see [Resume Studio](./design-resume#custom-typst-templates) for the full behavior. The custom theme is a per-workspace template rather than a folder under `typst-themes`, so it is not listed by `typst-theme:generate`.
+
 ## Common problems
 
 - Import fails:

@@ -7,6 +7,7 @@ import {
 import { DesignResumeDock } from "@client/components/design-resume/DesignResumeDock";
 import { DesignResumePreviewPanel } from "@client/components/design-resume/DesignResumePreviewPanel";
 import { DesignResumeRail } from "@client/components/design-resume/DesignResumeRail";
+import { DesignResumeTypstTemplateDialog } from "@client/components/design-resume/DesignResumeTypstTemplateDialog";
 import { ItemDialog } from "@client/components/design-resume/ItemDialog";
 import {
   asArray,
@@ -82,6 +83,11 @@ export const DesignResumePage: React.FC = () => {
     activeDialogItem,
     pdfRenderer,
     typstTheme,
+    typstTemplate,
+    typstTemplateUpdatedAt,
+    typstTemplateDialogOpen,
+    typstTemplateSaving,
+    typstTemplateDeleting,
     canDownloadPdf,
     pictureEnabled,
     pictureDisabledReason,
@@ -101,6 +107,9 @@ export const DesignResumePage: React.FC = () => {
     handleDeletePicture,
     handlePdfRendererChange,
     handleTypstThemeChange,
+    handleSaveTypstTemplate,
+    handleDeleteTypstTemplate,
+    setTypstTemplateDialogOpen,
     handleMobileSectionSelect,
     getDesignResumeSectionBadge,
   } = useDesignResumeStudio();
@@ -463,11 +472,15 @@ export const DesignResumePage: React.FC = () => {
                 draft={draft}
                 pdfRenderer={pdfRenderer}
                 typstTheme={typstTheme}
+                typstTemplateUpdatedAt={typstTemplateUpdatedAt}
                 isUpdatingRenderer={rendererUpdating || settingsLoading}
                 isDirty={dirty}
                 saveState={saveState}
                 onPdfRendererChange={handlePdfRendererChange}
                 onTypstThemeChange={handleTypstThemeChange}
+                onOpenTypstTemplateDialog={() =>
+                  setTypstTemplateDialogOpen(true)
+                }
               />
             </div>
           </>
@@ -656,6 +669,16 @@ export const DesignResumePage: React.FC = () => {
           }
         />
       ) : null}
+
+      <DesignResumeTypstTemplateDialog
+        open={typstTemplateDialogOpen}
+        onOpenChange={setTypstTemplateDialogOpen}
+        template={typstTemplate}
+        saving={typstTemplateSaving}
+        deleting={typstTemplateDeleting}
+        onSave={handleSaveTypstTemplate}
+        onDelete={handleDeleteTypstTemplate}
+      />
 
       <AlertDialog
         open={showReimportConfirm}

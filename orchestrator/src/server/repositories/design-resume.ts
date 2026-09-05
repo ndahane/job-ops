@@ -5,7 +5,11 @@ import {
   privateDataScopeFilter,
 } from "../tenancy/private-scope";
 
-const { designResumeAssets, designResumeDocuments } = schema;
+const {
+  designResumeAssets,
+  designResumeDocuments,
+  designResumeTypstTemplates,
+} = schema;
 
 function documentsScopeFilter() {
   return privateDataScopeFilter(designResumeDocuments);
@@ -13,6 +17,10 @@ function documentsScopeFilter() {
 
 function assetsScopeFilter() {
   return privateDataScopeFilter(designResumeAssets);
+}
+
+function typstTemplatesScopeFilter() {
+  return privateDataScopeFilter(designResumeTypstTemplates);
 }
 
 export async function getLatestDesignResumeDocument() {
@@ -174,4 +182,61 @@ export async function findDesignResumeAssetForDocument(args: {
     )
     .limit(1);
   return row ?? null;
+}
+
+export async function getLatestDesignResumeTypstTemplate() {
+  const [row] = await db
+    .select()
+    .from(designResumeTypstTemplates)
+    .where(typstTemplatesScopeFilter())
+    .orderBy(desc(designResumeTypstTemplates.updatedAt))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function upsertDesignResumeTypstTemplate(input: {
+  id: string;
+  fileName: string;
+  content: string;
+  byteSize: number;
+  createdAt?: string;
+  updatedAt: string;
+}) {
+  const scope = getPrivateDataScope();
+  const existing = await getLatestDesignResumeTypstTemplate();
+  if (existing) {
+    await db
+      .update(designResumeTypstTemplates)
+      .set({
+        fileName: input.fileName,
+        content: input.content,
+        byteSize: input.byteSize,
+        updatedAt: input.updatedAt,
+      })
+      .where(
+        and(
+          typstTemplatesScopeFilter(),
+          eq(designResumeTypstTemplates.id, existing.id),
+        ),
+      );
+  } else {
+    await db.insert(designResumeTypstTemplates).values({
+      id: input.id,
+      tenantId: scope.tenantId,
+      userId: scope.userId,
+      fileName: input.fileName,
+      content: input.content,
+      byteSize: input.byteSize,
+      createdAt: input.createdAt ?? input.updatedAt,
+      updatedAt: input.updatedAt,
+    });
+  }
+
+  return getLatestDesignResumeTypstTemplate();
+}
+
+export async function deleteDesignResumeTypstTemplate() {
+  await db
+    .delete(designResumeTypstTemplates)
+    .where(typstTemplatesScopeFilter());
 }

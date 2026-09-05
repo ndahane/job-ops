@@ -389,6 +389,23 @@ export interface DesignResumePdfResponse {
   generatedAt: string;
 }
 
+export interface DesignResumeTypstTemplateSaveRequest {
+  fileName?: string;
+  source: string;
+}
+
+export interface DesignResumeTypstTemplate {
+  fileName: string;
+  source: string;
+  byteSize: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DesignResumeTypstTemplateResponse {
+  template: DesignResumeTypstTemplate | null;
+}
+
 export type DesignResumeAiFieldValueType =
   | "plain_text"
   | "html"

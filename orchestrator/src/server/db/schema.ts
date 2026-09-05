@@ -775,6 +775,25 @@ export const designResumeAssets = sqliteTable(
   }),
 );
 
+export const designResumeTypstTemplates = sqliteTable(
+  "design_resume_typst_templates",
+  {
+    id: text("id").primaryKey(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .default("tenant_default")
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    fileName: text("file_name").notNull(),
+    content: text("content").notNull(),
+    byteSize: integer("byte_size").notNull(),
+    createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+    updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+  },
+);
+
 export const jobDocuments = sqliteTable(
   "job_documents",
   {
@@ -1091,6 +1110,10 @@ export type NewDesignResumeDocumentRow =
   typeof designResumeDocuments.$inferInsert;
 export type DesignResumeAssetRow = typeof designResumeAssets.$inferSelect;
 export type NewDesignResumeAssetRow = typeof designResumeAssets.$inferInsert;
+export type DesignResumeTypstTemplateRow =
+  typeof designResumeTypstTemplates.$inferSelect;
+export type NewDesignResumeTypstTemplateRow =
+  typeof designResumeTypstTemplates.$inferInsert;
 export type PostApplicationIntegrationRow =
   typeof postApplicationIntegrations.$inferSelect;
 export type NewPostApplicationIntegrationRow =

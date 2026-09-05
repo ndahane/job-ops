@@ -10,6 +10,7 @@ import {
   PDF_RENDERER_VALUES,
   type PdfRenderer,
   type ResumeProjectCatalogItem,
+  TYPST_THEME_CUSTOM_LABEL,
   TYPST_THEME_LABELS,
   TYPST_THEME_VALUES,
   type TypstTheme,
@@ -218,6 +219,7 @@ export const ReactiveResumeConfigPanel: React.FC<
                   {TYPST_THEME_LABELS[value]}
                 </SelectItem>
               ))}
+              <SelectItem value="custom">{TYPST_THEME_CUSTOM_LABEL}</SelectItem>
             </SelectContent>
           </Select>
           {typstThemeError ? (
@@ -225,7 +227,8 @@ export const ReactiveResumeConfigPanel: React.FC<
           ) : null}
           <p className="text-xs text-muted-foreground">
             Classic mirrors the current resume density; Compact fits more
-            content on the page.
+            content on the page; Custom compiles a Typst template imported from
+            Resume Studio.
           </p>
         </div>
       ) : null}

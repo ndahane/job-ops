@@ -11,7 +11,11 @@ import { getSetting } from "@server/repositories/settings";
 import { getJobOpsPublicAvailability } from "@server/services/tracer-links";
 import { safePdfFileName } from "@shared/filename-sanitizer";
 import { settingsRegistry } from "@shared/settings-registry";
-import type { DesignResumePdfResponse, PdfRenderer } from "@shared/types";
+import type {
+  DesignResumePdfResponse,
+  PdfRenderer,
+  TypstTheme,
+} from "@shared/types";
 import { getCurrentDesignResume } from "./design-resume";
 import { resolveWritingOutputLanguageForResumeJson } from "./output-language";
 import {
@@ -77,6 +81,18 @@ async function resolveTypstTheme() {
     settingsRegistry.typstTheme.parse(storedValue ?? undefined) ??
     settingsRegistry.typstTheme.default()
   );
+}
+
+async function resolveCustomTypstSource(
+  typstTheme: TypstTheme | undefined,
+): Promise<string | undefined> {
+  if (typstTheme !== "custom") return undefined;
+  // Lazy import keeps the database module out of pdf.ts's static import
+  // graph, which server-side unit tests rely on when they mock fs modules.
+  const { requireDesignResumeTypstSource } = await import(
+    "./design-resume/typst-template"
+  );
+  return requireDesignResumeTypstSource();
 }
 
 async function resolveLocalResumeLanguage(
@@ -382,6 +398,7 @@ export async function generatePdf(
         resolveLocalResumeLanguage(preparedResume.data, jobDescription),
         renderer === "typst" ? resolveTypstTheme() : Promise.resolve(undefined),
       ]);
+      const customTypstSource = await resolveCustomTypstSource(typstTheme);
       await renderResumePdf({
         resumeJson: preparedResume.data,
         outputPath,
@@ -389,6 +406,7 @@ export async function generatePdf(
         language,
         renderer,
         typstTheme,
+        customTypstSource,
       });
     } else {
       await renderRxResumePdf({
@@ -440,6 +458,7 @@ export async function generateDesignResumePdf(options?: {
   if (renderer !== "rxresume") {
     const typstTheme =
       renderer === "typst" ? await resolveTypstTheme() : undefined;
+    const customTypstSource = await resolveCustomTypstSource(typstTheme);
     await renderResumePdf({
       resumeJson: designResume.data,
       outputPath,
@@ -447,6 +466,7 @@ export async function generateDesignResumePdf(options?: {
       language,
       renderer,
       typstTheme,
+      customTypstSource,
     });
   } else {
     await renderRxResumePdf({

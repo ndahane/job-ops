@@ -9,6 +9,8 @@ import type {
   DesignResumePatchRequest,
   DesignResumePdfResponse,
   DesignResumeStatusResponse,
+  DesignResumeTypstTemplateResponse,
+  DesignResumeTypstTemplateSaveRequest,
   OnboardingStatusResponse,
   ProfileStatusResponse,
   ResumeProfile,
@@ -72,6 +74,32 @@ export async function importDesignResumeFromFile(input: {
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+export async function getDesignResumeTypstTemplate(): Promise<DesignResumeTypstTemplateResponse> {
+  return fetchApi<DesignResumeTypstTemplateResponse>(
+    "/design-resume/typst-template",
+    { cache: "no-store" },
+  );
+}
+
+export async function saveDesignResumeTypstTemplate(
+  input: DesignResumeTypstTemplateSaveRequest,
+): Promise<DesignResumeTypstTemplateResponse> {
+  return fetchApi<DesignResumeTypstTemplateResponse>(
+    "/design-resume/typst-template",
+    {
+      method: "PUT",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export async function deleteDesignResumeTypstTemplate(): Promise<DesignResumeTypstTemplateResponse> {
+  return fetchApi<DesignResumeTypstTemplateResponse>(
+    "/design-resume/typst-template",
+    { method: "DELETE" },
+  );
 }
 
 export async function updateDesignResume(

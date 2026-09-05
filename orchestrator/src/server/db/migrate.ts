@@ -479,6 +479,17 @@ const migrations = [
   `CREATE INDEX IF NOT EXISTS idx_design_resume_assets_document_id
     ON design_resume_assets(document_id)`,
 
+  `CREATE TABLE IF NOT EXISTS design_resume_typst_templates (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL DEFAULT 'tenant_default',
+    file_name TEXT NOT NULL,
+    content TEXT NOT NULL,
+    byte_size INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+  )`,
+
   `CREATE TABLE IF NOT EXISTS job_documents (
     id TEXT PRIMARY KEY,
     tenant_id TEXT NOT NULL DEFAULT 'tenant_default',
@@ -1255,6 +1266,7 @@ function ensureTenantColumns(): void {
     "job_chat_runs",
     "design_resume_documents",
     "design_resume_assets",
+    "design_resume_typst_templates",
     "job_documents",
     "post_application_integrations",
     "post_application_sync_runs",
@@ -1288,6 +1300,7 @@ function ensurePrivateUserColumns(): void {
     "job_chat_runs",
     "design_resume_documents",
     "design_resume_assets",
+    "design_resume_typst_templates",
     "job_documents",
     "post_application_integrations",
     "post_application_sync_runs",

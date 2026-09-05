@@ -17,6 +17,11 @@ import {
 } from "@server/services/design-resume";
 import { generateDesignResumeFieldSuggestion } from "@server/services/design-resume/ai-field-suggestion";
 import { importDesignResumeFromFile } from "@server/services/design-resume/import-file";
+import {
+  getDesignResumeTypstTemplate,
+  removeDesignResumeTypstTemplate,
+  saveDesignResumeTypstTemplate,
+} from "@server/services/design-resume/typst-template";
 import { generateDesignResumePdf } from "@server/services/pdf";
 import { getTenantDesignResumePdfPath } from "@server/services/pdf-storage";
 import { clearProfileCache } from "@server/services/profile";
@@ -211,6 +216,11 @@ const importFileSchema = z.object({
   dataBase64: z.string().trim().min(1),
 });
 
+const typstTemplateSchema = z.object({
+  fileName: z.string().trim().min(1).max(255).optional(),
+  source: z.string().min(1).max(1_100_000),
+});
+
 export const designResumeAiFieldSuggestionSchema = z.object({
   document: z.unknown(),
   field: z.object({
@@ -329,6 +339,36 @@ designResumeRouter.post(
       documentId: document.id,
       durationMs: elapsedMs(startedAt),
     });
+  }),
+);
+
+designResumeRouter.get(
+  "/typst-template",
+  asyncRoute(async (_req: Request, res: Response) => {
+    ok(res, { template: await getDesignResumeTypstTemplate() });
+  }),
+);
+
+designResumeRouter.put(
+  "/typst-template",
+  asyncRoute(async (req: Request, res: Response) => {
+    const input = typstTemplateSchema.parse(req.body);
+    const template = await saveDesignResumeTypstTemplate(input);
+    ok(res, { template }, 201);
+    queueDesignResumeAutoPdfRegeneration(
+      "PUT /api/design-resume/typst-template",
+    );
+  }),
+);
+
+designResumeRouter.delete(
+  "/typst-template",
+  asyncRoute(async (_req: Request, res: Response) => {
+    await removeDesignResumeTypstTemplate();
+    ok(res, { template: null });
+    queueDesignResumeAutoPdfRegeneration(
+      "DELETE /api/design-resume/typst-template",
+    );
   }),
 );
 

@@ -18,7 +18,7 @@ import {
   PDF_RENDERER_VALUES,
   type PdfRenderer,
   type ResumeProjectsSettings,
-  TYPST_THEME_VALUES,
+  TYPST_THEME_VALUES_WITH_CUSTOM,
   type TypstTheme,
 } from "./types/settings";
 
@@ -193,7 +193,7 @@ const parseChatStyleManualLanguageOrNull = createEnumParser(
   CHAT_STYLE_MANUAL_LANGUAGE_VALUES,
 );
 const parsePdfRendererOrNull = createEnumParser(PDF_RENDERER_VALUES);
-const parseTypstThemeOrNull = createEnumParser(TYPST_THEME_VALUES);
+const parseTypstThemeOrNull = createEnumParser(TYPST_THEME_VALUES_WITH_CUSTOM);
 
 const llmPurposeOverrideSchema = z.object({
   provider: z.preprocess(
@@ -431,7 +431,7 @@ export const settingsRegistry = {
   },
   typstTheme: {
     kind: "typed" as const,
-    schema: z.enum(TYPST_THEME_VALUES),
+    schema: z.enum(TYPST_THEME_VALUES_WITH_CUSTOM),
     default: (): TypstTheme => "classic",
     parse: parseTypstThemeOrNull,
     serialize: (value: TypstTheme | null | undefined): string | null =>

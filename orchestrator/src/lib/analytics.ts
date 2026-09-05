@@ -227,6 +227,12 @@ type ProductEventMap = {
   resume_studio_export_completed: {
     result: "success" | "error";
   };
+  resume_studio_typst_template_saved: {
+    byte_size_bucket: string;
+  };
+  resume_studio_typst_template_deleted: {
+    was_active_theme: boolean;
+  };
   resume_studio_project_policy_changed: {
     from_mode: "manual" | "ai-selectable" | "must-include";
     to_mode: "manual" | "ai-selectable" | "must-include";

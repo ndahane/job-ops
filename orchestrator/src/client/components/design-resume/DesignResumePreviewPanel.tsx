@@ -6,9 +6,12 @@ import type {
 import {
   PDF_RENDERER_LABELS,
   PDF_RENDERER_VALUES,
+  TYPST_THEME_CUSTOM_LABEL,
   TYPST_THEME_LABELS,
   TYPST_THEME_VALUES,
 } from "@shared/types";
+import { FileCode2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -23,11 +26,13 @@ type DesignResumePreviewPanelProps = {
   draft: DesignResumeDocument;
   pdfRenderer: PdfRenderer;
   typstTheme: TypstTheme;
+  typstTemplateUpdatedAt: string | null;
   isUpdatingRenderer: boolean;
   isDirty: boolean;
   saveState: "idle" | "saving" | "saved" | "error";
   onPdfRendererChange: (renderer: PdfRenderer) => void;
   onTypstThemeChange: (theme: TypstTheme) => void;
+  onOpenTypstTemplateDialog: () => void;
   className?: string;
 };
 
@@ -35,11 +40,13 @@ export function DesignResumePreviewPanel({
   draft,
   pdfRenderer,
   typstTheme,
+  typstTemplateUpdatedAt,
   isUpdatingRenderer,
   isDirty,
   saveState,
   onPdfRendererChange,
   onTypstThemeChange,
+  onOpenTypstTemplateDialog,
   className,
 }: DesignResumePreviewPanelProps) {
   return (
@@ -64,25 +71,40 @@ export function DesignResumePreviewPanel({
           </SelectContent>
         </Select>
         {pdfRenderer === "typst" ? (
-          <Select
-            value={typstTheme}
-            onValueChange={(value) => onTypstThemeChange(value as TypstTheme)}
-            disabled={isUpdatingRenderer}
-          >
-            <SelectTrigger
-              id="design-resume-typst-theme"
-              className="w-full sm:w-52"
+          <>
+            <Select
+              value={typstTheme}
+              onValueChange={(value) => onTypstThemeChange(value as TypstTheme)}
+              disabled={isUpdatingRenderer}
             >
-              <SelectValue placeholder="Choose a Typst theme" />
-            </SelectTrigger>
-            <SelectContent>
-              {TYPST_THEME_VALUES.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {TYPST_THEME_LABELS[value]}
+              <SelectTrigger
+                id="design-resume-typst-theme"
+                className="w-full sm:w-52"
+              >
+                <SelectValue placeholder="Choose a Typst theme" />
+              </SelectTrigger>
+              <SelectContent>
+                {TYPST_THEME_VALUES.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {TYPST_THEME_LABELS[value]}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">
+                  {TYPST_THEME_CUSTOM_LABEL}
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9"
+              onClick={onOpenTypstTemplateDialog}
+            >
+              <FileCode2 className="mr-2 h-4 w-4" />
+              Manage template
+            </Button>
+          </>
         ) : null}
       </div>
 
@@ -91,6 +113,7 @@ export function DesignResumePreviewPanel({
           draft={draft}
           pdfRenderer={pdfRenderer}
           typstTheme={typstTheme}
+          typstTemplateUpdatedAt={typstTemplateUpdatedAt}
           isUpdatingRenderer={isUpdatingRenderer}
           isDirty={isDirty}
           saveState={saveState}
